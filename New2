@@ -1,0 +1,434 @@
+<%@page import="com.liferay.portal.kernel.service.OrganizationLocalServiceUtil"%>
+<%@page import="com.liferay.portal.kernel.model.Organization"%>
+<%@page import="java.util.List"%>
+<%@page import="com.aapa.billing.util.AapaBillingUtil"%>
+<%@page import="com.aapa.billing.constants.AapaBillingPortletKeys"%>
+<%@ include file="/init.jsp"%>
+<%@ taglib uri="http://liferay.com/tld/aui" prefix="aui"%>
+<html>
+<head>
+
+
+	<style type="text/css">
+		select{
+			margin: 10px;
+		}
+		#generateReportMsgID{
+			color: red;
+			font-weight: bold;
+		}
+
+	</style>
+</head>
+<body>
+<table border="0">
+	<tr>
+		<td>
+
+                    <%
+     					AapaBillingUtil aapaBillingUtil = new AapaBillingUtil();
+     					aapaBillingUtil.fetchOrganization();
+     					List<Organization> orgs = aapaBillingUtil.fetchOrganization();
+     				%> <select name="" id="wdorg">
+     					<option value="-1" disabled="true" selected="true">Select WD Name</option>
+     					<option value="0">ALL</option>
+     					<%
+     						for (int index = 0; index < orgs.size(); index++) {
+     								Organization organization = orgs.get(index);
+     					%>
+
+     					<option value="<%=organization.getOrganizationId()%>"><%=organization.getName()%></option>
+
+     					<%
+     						}
+     					%>
+
+	</select>
+	<br/>
+	<select  id="Typeofreport">
+		<option value="-1" selected="true" disabled>Select Type Of Report</option>
+		<option value="1">Monthly</option>
+		<option value="2">Quarterly</option>
+	</select>
+<br/><br/>
+<select id="month_year">
+		<option selected="true" value="-1" disabled>Select Year</option>
+
+	</select>
+	<select id="quater_year">
+    		<option selected="true" value="-1" disabled>Select Year</option>
+
+    	</select>
+<br/><br/>
+<select id="selectmonth">
+		<option selected="true" value="-1" disabled>Select Month</option>
+
+	</select>
+	<select id="selectquater">
+    		<option selected="true" value="-1" disabled>Select Quater</option>
+
+    	</select>
+
+
+
+		</td>
+		<td>
+	<select id="Typeoforg">
+
+        					<aui:option value="-1">ALL</aui:option>
+        					<aui:option value="1">JOBBER</aui:option>
+        					<aui:option value="2">CSC</aui:option>
+	</select><br><br>
+<button id="generateReportId">Generate Report</button><br><br>
+<button id="exportReportId">Export Report</button>
+
+<span id="generateReportMsgID"> </span>
+<span id="display"> </span>
+		</td>
+
+	</tr>
+</table>
+
+
+
+
+
+<script type="text/javascript">
+		$(document).ready(function(){
+			$("#Typeofreport").hide();
+			$("#month_year").hide();
+			$("#quater_year").hide();
+			$("#selectmonth").hide();
+			$("#selectquater").hide();
+			$("#Typeoforg").hide();
+			$("#generateReportId").hide();
+			$("#exportReportId").hide();
+			$("#generateReportMsgID").hide();
+
+
+$("#wdorg").on('change', function (e) {
+	$("#Typeofreport").show().val(-1);
+	$("#Typeoforg").show().prop("disabled", true);
+	$("#generateReportId").show().prop("disabled", true);
+	$("#exportReportId").show().prop("disabled", true);
+
+    var optionSelected = $("option:selected", this);
+    var valueSelected = this.value;
+
+    console.log("value is "+valueSelected);
+/*
+if (selYear == currentYear) {
+
+//$("#Typeoforg").prop("disabled", false);
+$("#generateReportId").show().prop("disabled", false);
+$("#exportReportId").prop("disabled", true);
+}
+
+if (selYear != currentYear){
+	//$("#Typeoforg").show().prop("disabled", false);
+	$("#generateReportId").show().prop("disabled", true);
+	$("#exportReportId").show().prop("disabled", false);
+}
+*/
+
+
+
+
+	//new4
+    $("#month_year").hide();
+    $("#quater_year").hide();
+    $("#selectmonth").hide();
+    $("#selectquater").hide();
+    //new4
+    $("#generateReportMsgID").hide();
+
+
+});
+$("#Typeofreport").on('change', function (e) {
+    $("#generateReportMsgID").hide();
+    var optionSelected = $("option:selected", this);
+    var valueSelected = this.value;
+    if (valueSelected == 1) {
+
+                //new2
+                 $("#Typeoforg").show().prop("disabled", true);
+                 $("#generateReportId").show().prop("disabled", true);
+                 $("#exportReportId").show().prop("disabled", true);
+                //new2
+        $("#quater_year").hide();
+    	//$("#month_year").show();
+		$("#selectmonth").show().val(-1);
+		$("#month_year").show().val(-1)
+		$("#selectquater").hide();
+
+    }
+    if (valueSelected == 2) {
+                    //new2
+                 $("#Typeoforg").show().prop("disabled", true);
+                 $("#generateReportId").show().prop("disabled", true);
+                 $("#exportReportId").show().prop("disabled", true);
+                    //new2
+    	$("#month_year").hide();
+		$("#selectmonth").hide();
+		//$("#quater_year").show();
+		$("#quater_year").show().val(-1)
+		$("#selectquater").show().val(-1);
+    }
+});
+
+
+
+
+
+var currentYear = new Date().getFullYear();
+var currentMonth = new Date().getMonth();
+var cascadedDropDownMonthId = "#selectmonth";
+//Adding Last 10 Years to Year Drop Down
+for (var j = 2010;j <= currentYear ; j++)
+{
+
+
+$("#month_year").append('<option value="'+ j.toString() +'">' +j.toString() +'</option>');
+
+}
+for (var i = 2010;i <= currentYear ; i++)
+{
+$("#quater_year").append('<option value="'+ i.toString() +'">' +i.toString() +'</option>');
+
+}
+
+
+
+
+
+//Disabling Month Dropdown in case of invalid Selections.
+$(cascadedDropDownMonthId).prop("disabled", true);
+$("#month_year").change(function () {
+            var currentSelectedValue = $(this).val();
+            $("#generateReportMsgID").hide();
+            //new 6
+             $("#Typeoforg").show().prop("disabled", true);
+             $("#generateReportId").show().prop("disabled", true);
+             $("#exportReportId").show().prop("disabled", true);
+             //new 6
+            if (currentSelectedValue == "-1")
+            {
+                $(cascadedDropDownMonthId).prop("disabled", true);
+            }
+            else
+            {
+                $(cascadedDropDownMonthId).prop("disabled", false);
+                //Get Current Year from Dropdown and Converting to Integer for performing math operations
+                var currentSelectedYear = parseInt($(this).val());
+
+                //As Index of Javascript Month is from 0 to 11 therefore totalMonths are 11 NOT 12
+                var totalMonths = 11;
+                if (currentSelectedYear == currentYear) {
+                    totalMonths = currentMonth;
+                }
+                var monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                //Emptying the Month Dropdown to clear our last values
+                $(cascadedDropDownMonthId).empty();
+
+                $(cascadedDropDownMonthId).append('<option value="-1">Select Month</option>');
+                //Appending Current Valid Months
+                for (var month = 0; month <= totalMonths; month++) {
+                    $(cascadedDropDownMonthId).append('<option value="'+ (month+1) +  '">' + monthNames[month] + '</option>');
+                }
+            }
+    });
+
+
+
+
+  //Disabling quater Dropdown in case of invalid Selections.
+  var cascadedDropDownMonthId1 = "#selectquater";
+  $(cascadedDropDownMonthId1).prop("disabled", true);
+  $("#quater_year").change(function () {
+                $("#generateReportMsgID").hide();
+                //new
+             $("#Typeoforg").show().prop("disabled", true);
+             $("#generateReportId").show().prop("disabled", true);
+             $("#exportReportId").show().prop("disabled", true);
+                //new
+              var currentSelectedValue = $(this).val();
+
+              if (currentSelectedValue == "-1")
+              {
+                  $(cascadedDropDownMonthId1).prop("disabled", true);
+              }
+              else
+              {
+                  $(cascadedDropDownMonthId1).prop("disabled", false);
+                  //Get Current Year from Dropdown and Converting to Integer for performing math operations
+                  var currentSelectedYear = parseInt($(this).val());
+
+                  //As Index of Javascript Month is from 0 to 11 therefore totalMonths are 11 NOT 12
+                  var totalMonths = 4;
+                  if (currentSelectedYear == currentYear) {
+                      totalMonths = currentMonth;
+
+                      if(totalMonths<=4){
+                            totalMonths=1;
+                      }
+                      else if(totalMonths<=7){
+                            totalMonths=2;
+
+                       }
+                       else if(totalMonths<=9){
+                            totalMonths=3;
+                       }
+                       else{
+                       totalMonths=4;
+                       }
+
+
+                  }
+                  var monthNames = ["Q1(Jan,Feb,Mar)", "Q2(Apr,May,June)", "Q3(July,Aug,Sep)", "Q4(Oct,Nov,Dec)"];
+                  //Emptying the Month Dropdown to clear our last values
+                  $(cascadedDropDownMonthId1).empty();
+
+                  $(cascadedDropDownMonthId1).append('<option value="-1" disabled selected="true">Select Quater</option>');
+                  //Appending Current Valid Months
+                  for (var month = 0; month < totalMonths; month++) {
+
+                      $(cascadedDropDownMonthId1).append('<option value="'+ (month) +  '">' + monthNames[month] + '</option>');
+                  }
+              }
+      });
+
+
+
+
+
+
+$("#selectmonth").on('change', function (e){
+//$("#month_year").show().val(-1);
+$("#generateReportMsgID").hide();
+
+var selYear = $("#month_year").children("option:selected").val();
+var main = $("#wdorg").children("option:selected").val();
+
+//new
+
+  if(main== 0)
+    {
+
+        $("#Typeoforg").val(-1).show().prop("disabled", true);
+    }
+    if(main != 0)
+        {
+
+            $("#Typeoforg").show().prop("disabled", false);
+        }
+
+
+
+//new
+if (selYear == currentYear) {
+
+//$("#Typeoforg").prop("disabled", false);
+$("#generateReportId").show().prop("disabled", false);
+$("#exportReportId").prop("disabled", true);
+}
+
+if (selYear != currentYear){
+	//$("#Typeoforg").show().prop("disabled", false);
+	$("#generateReportId").show().prop("disabled", true);
+	$("#exportReportId").show().prop("disabled", false);
+}
+
+});
+
+
+
+
+
+$("#selectquater").on('change', function (e){
+//$("#quater_year").show().val(-1);
+var selYear = $("#quater_year").children("option:selected").val();
+
+$("#generateReportMsgID").hide();
+
+var main = $("#wdorg").children("option:selected").val();
+
+//new
+
+  if(main== 0)
+    {
+
+        $("#Typeoforg").val(-1).show().prop("disabled", true);
+    }
+    if(main != 0)
+        {
+
+            $("#Typeoforg").show().prop("disabled", false);
+        }
+
+
+
+//new
+
+if (selYear == currentYear) {
+
+//$("#Typeoforg").prop("disabled", false);
+$("#generateReportId").show().prop("disabled", false);
+$("#exportReportId").prop("disabled", true);
+}
+
+if (selYear != currentYear){
+	//$("#Typeoforg").show().prop("disabled", false);
+	$("#generateReportId").show().prop("disabled", true);
+	$("#exportReportId").show().prop("disabled", false);
+}
+});
+
+
+
+$("#generateReportId").on('click', function(e){
+
+$("#generateReportMsgID").hide();
+$("#generateReportMsgID").show().html("<h4> Report Generated Successfully </h4>");
+});
+$("#exportReportId").on('click', function(e){
+
+$("#generateReportMsgID").hide();
+$("#generateReportMsgID").show().html("<h4> Report Exported Successfully </h4>");
+});
+
+
+ $("#Typeoforg").change(function () {
+
+    $("#generateReportMsgID").hide();
+  });
+
+});
+
+
+
+</script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

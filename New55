@@ -1,0 +1,893 @@
+package com.tma.user.info.action;
+
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.lang.invoke.MethodHandles;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeSet;
+
+import javax.naming.Context;
+import javax.portlet.PortletContext;
+import javax.portlet.PortletRequestDispatcher;
+import javax.portlet.ResourceRequest;
+import javax.portlet.ResourceResponse;
+import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.osgi.service.component.annotations.Component;
+
+import com.liferay.portal.kernel.json.JSONArray;
+import com.liferay.portal.kernel.json.JSONFactoryUtil;
+import com.liferay.portal.kernel.json.JSONObject;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.portlet.bridges.mvc.BaseMVCResourceCommand;
+import com.liferay.portal.kernel.portlet.bridges.mvc.MVCResourceCommand;
+import com.liferay.portal.kernel.service.UserLocalServiceUtil;
+import com.liferay.portal.kernel.util.ParamUtil;
+import com.tma.user.info.constants.UserInfoPortletKeys;
+import com.tma.user.info.util.UserDetails;
+
+@Component(
+		immediate = true,
+		property = {
+				"javax.portlet.name="+ UserInfoPortletKeys.UserInfo,
+				"mvc.command.name=" + UserInfoPortletKeys.FETCH_USERS
+		},
+		service = MVCResourceCommand.class
+		)
+
+public class UserInfoResourceCommand extends BaseMVCResourceCommand{
+	private static Log logger=LogFactoryUtil.getLog(MethodHandles.lookup().lookupClass());
+	@Override
+	protected void doServeResource(ResourceRequest req, ResourceResponse res)
+			throws Exception {
+
+		logger.info("******** Working ********");
+		String key=ParamUtil.getString(req, "search", null);
+		//System.out.println(" ajax request  is::"+key);
+		HashMap<String, String> result=new HashMap<>();
+		List<UserDetails> udetails=new ArrayList<>();
+		String status="inactive";
+		List<User> userinfo6=UserLocalServiceUtil.getUsers(1,UserLocalServiceUtil.getUsersCount());
+		
+		for (User user : userinfo6)
+		{  UserDetails u=new UserDetails();
+			if(user.getFirstName().equalsIgnoreCase("raju d"))
+			{
+				u.setDept("Developers");
+				u.setRole("srdeveloper");
+				
+			}
+			else if(user.getFirstName().equalsIgnoreCase("naveen r"))
+			{
+				u.setDept("Developers");
+				u.setRole("jrdeveloper");
+			}
+			else if(user.getFirstName().equalsIgnoreCase("surya a"))
+			{
+				u.setDept("hr");
+				u.setRole("hr");
+				
+			}
+			
+			else 
+			{
+				u.setDept("");
+				u.setRole("");
+				
+			}
+			u.setScname(user.getScreenName());
+			u.setName(user.getFullName());
+			u.setEmail(user.getEmailAddress());
+			
+			
+			u.setRmanager("srinivas reddy");
+			u.setRhod("naveen kumar");
+			u.setMobile("9585XXXX21");
+			u.setGender("male");
+			u.setDob("xx-xx-xxxx");
+			if(user.getStatus()==0) { status="active";}
+			else { status="inactive";}
+			u.setStatus(status);
+			
+			udetails.add(u);
+		}
+
+		//List<User> userInfo=UserLocalServiceUtil.getUsers(104,115);
+		List<User> userInfo=UserLocalServiceUtil.getUsers(1,UserLocalServiceUtil.getUsersCount());
+		List<User> userInfo2=UserLocalServiceUtil.getUsers(1,UserLocalServiceUtil.getUsersCount());
+		TreeSet<String> set = new TreeSet<String>();
+		for (User  user : userInfo2) {
+			set.add(user.getFullName().toLowerCase());
+			
+		}
+		int count= UserLocalServiceUtil.getUsersCount();
+		//System.out.println(count);
+		if(key.equals("key")) {
+			
+			JSONArray UList = JSONFactoryUtil.createJSONArray();
+			
+			for (String user : set)
+			{ 
+				JSONObject JSONFname = JSONFactoryUtil.createJSONObject();
+				JSONFname.put("fullname",user);
+				UList.put(JSONFname);
+
+			}//for loop
+			res.getWriter().write(UList.toString());
+		}
+
+		else if(key.equals("byname")) {
+			JSONArray UList2 = JSONFactoryUtil.createJSONArray();
+			String name=ParamUtil.getString(req, "searchbyname", null);
+			for (User user : userInfo)
+			{   
+				if(user.getFullName().toLowerCase().trim().startsWith(name.toLowerCase().trim()) || user.getFullName().toLowerCase().trim().contains(name.toLowerCase().trim())) {
+					//logger.info("executing................");
+					JSONObject JSONFname = JSONFactoryUtil.createJSONObject();
+					JSONFname.put("fullname",user.getFullName());
+					UList2.put(JSONFname);
+				}
+				else
+				{
+					result.put("resultdata","result-not-found");
+				}
+
+			}//for loop
+			res.getWriter().write(UList2.toString());
+		}
+
+		else if(key.equals("count")) {
+
+			String count2=String.valueOf(UserLocalServiceUtil.getUsersCount());
+
+			//System.out.println("list of users"+count2);
+			res.getWriter().write(count2.toString());
+
+		}
+
+		else if(key.equals("scroll")) {
+
+			int start=ParamUtil.getInteger(req, "start");
+			int end=ParamUtil.getInteger(req, "end");
+			List<User> userInfo3=UserLocalServiceUtil.getUsers(start,end);
+			JSONArray UList = JSONFactoryUtil.createJSONArray();
+			for (User user : userInfo3)
+			{ 
+				JSONObject JSONFname = JSONFactoryUtil.createJSONObject();
+				JSONFname.put("fullname",user.getFullName());
+				UList.put(JSONFname);
+
+			}//for loop
+			res.getWriter().write(UList.toString());
+
+		}
+
+
+
+		else if(key.equals("bygroup")) {
+		JSONArray UList5 = JSONFactoryUtil.createJSONArray();
+			String scname=ParamUtil.getString(req, "scname", null);
+			String email=ParamUtil.getString(req, "email", null);
+			String dept=ParamUtil.getString(req, "dept1", null);
+			String role=ParamUtil.getString(req, "role", null);
+			String status2=ParamUtil.getString(req, "status", null);
+			System.out.println("scname"+scname);
+			System.out.println("email"+email);
+			System.out.println("dept"+dept);
+			System.out.println("role"+role);
+			System.out.println("status"+status2);
+			
+			
+			
+			JSONArray UList = JSONFactoryUtil.createJSONArray();
+			JSONObject JSONFname2 = JSONFactoryUtil.createJSONObject();
+	//for loop
+			String condition=null;
+			
+			for(UserDetails us:udetails)
+			{
+			
+				
+					if(us.getDept().equalsIgnoreCase(dept)) {
+					JSONObject JSONFname = JSONFactoryUtil.createJSONObject();
+					JSONFname.put("fullname",us.getName());
+					UList.put(JSONFname);
+					}
+					else
+					{
+						
+					}
+				
+				
+			}
+	
+
+			res.getWriter().write(UList.toString());
+		}
+
+		
+		
+		
+		
+		
+		
+		else if(key.equals("individual")) {
+			//JSONArray UList2 = JSONFactoryUtil.createJSONArray();
+			String fname=ParamUtil.getString(req, "searchid", null);
+			
+			System.out.println("value is::::"+fname);
+			JSONObject JSONdetails = JSONFactoryUtil.createJSONObject();
+			for (User user : userInfo)
+			{ 
+				
+				if(user.getFullName().equals(fname))
+				{    
+					//logger.info("executing::::::::::::::::::");
+					if(fname.equals("raju d")) {
+						JSONdetails.put("dept","Developers");
+						JSONdetails.put("role","Sr.developer");
+					}
+					else if(fname.equals("naveen r")) {
+						JSONdetails.put("dept","Developers");
+						JSONdetails.put("role","Jr.Developer");
+					}
+					else if(fname.equals("surya a")) {
+						JSONdetails.put("dept","HR");
+						JSONdetails.put("role","Hr");
+					}
+					else
+					{
+						JSONdetails.put("dept"," ");
+						JSONdetails.put("role"," ");
+					}
+					JSONdetails.put("scname",user.getScreenName());
+					JSONdetails.put("name",user.getFullName());
+					JSONdetails.put("email",user.getEmailAddress());
+					
+					
+					JSONdetails.put("rmanager","srinivas reddy");
+					JSONdetails.put("rhod","naveen kumar");
+					JSONdetails.put("mobile","9585XXXX21");
+					JSONdetails.put("Gender","male");
+					JSONdetails.put("dob","xx-xx-xxxx");
+					if(user.getStatus()==0) { status="active";}
+					else { status="inactive";}
+					JSONdetails.put("status", status);
+				}
+				
+				
+
+
+
+			}//for loop
+			res.getWriter().write(JSONdetails.toJSONString());
+		}
+		else 
+		{
+			res.getWriter().write(result.get("result"));
+		}
+
+		logger.info("******** End ********");
+	}//method close
+}//class 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<%@page import="com.liferay.portal.kernel.json.JSONArray"%>
+<%@ include file="/init.jsp"  %>
+<%@page import="java.util.*"%>
+<%@page import="com.tma.user.info.constants.UserInfoPortletKeys"%>
+<portlet:resourceURL id="<%=UserInfoPortletKeys.FETCH_USERS%>" var="fetchusersURL" />
+<style type="text/css">
+  li.selected {
+    background-color: #7fa5e0;
+    color:black;
+  }
+.open-button {
+  background-color: #cbd1db;
+  color: white;
+  border: none;
+  cursor: pointer;
+  opacity: 0.8;
+ 
+}
+
+/* The popup form - hidden by default */
+.form-popup {
+  display: none;
+  position: fixed;
+  bottom: 100px;
+  right: 70%;
+  border: 3px solid #f1f1f1;
+ 
+}
+
+/* Add styles to the form container */
+.form-container {
+  max-width: 600px;
+  padding: 10px;
+  background-color: white;
+}
+
+/* Full-width input fields */
+.form-container input[type=text], .form-container input[type=password] {
+  width: 100%;
+  padding: 15px;
+  margin: 5px 0 22px 0;
+  border: none;
+  background: #f1f1f1;
+}
+
+/* When the inputs get focus, do something */
+.form-container input[type=text]:focus, .form-container input[type=password]:focus {
+  background-color: #ddd;
+  outline: none;
+}
+
+/* Set a style for the submit/login button */
+.form-container .btn {
+  background-color: #cbd1db;
+  color: white;
+  padding: 16px 20px;
+  border: none;
+  cursor: pointer;
+  width: 50;
+  margin-bottom:10px;
+  opacity: 0.8;
+}
+
+/* Add a red background color to the cancel button */
+.form-container .cancel {
+  background-color: red;
+}
+
+/* Add some hover effects to buttons */
+.form-container .btn:hover, .open-button:hover {
+  opacity: 1;
+}
+
+ 
+</style>
+ <script type="text/javascript">
+ 
+ function firstDisplay(obj) {
+    
+ 	console.log(obj.fullname);
+ 	str=obj.fullname;
+ 	
+	 
+    $.ajax({
+		  type:"GET",
+		  url:"<%=fetchusersURL%>",
+		  data:{ <portlet:namespace />search: "individual",<portlet:namespace />searchid: str},
+		  success: function(data){  
+			  var data2 = JSON.parse(data);
+		   //console.log(data); 
+		   //console.log(data2.fullname);
+		  
+
+		      $('#pscname').empty();
+			  $('#scname').empty();
+			  $('#name').empty();
+			  $('#mail').empty();
+			  $('#dept').empty();
+			  $('#role').empty();
+			  $('#rmanager').empty();
+			  $('#rhod').empty();
+			  $('#mobile').empty();
+			  $('#Gender').empty();
+			  $('#status').empty();
+			  $('#dob').empty();
+		   
+		   
+			  $('#pscname').append(data2.scname);
+			  $('#scname').append(data2.scname);
+			  $('#name').append(data2.name);
+			  $('#mail').append(data2.email);
+			  $('#dept').append(data2.dept);
+			  $('#role').append(data2.role);
+			  $('#rmanager').append(data2.rmanager);
+			  $('#rhod').append(data2.rhod);
+			  $('#mobile').append(data2.mobile);
+			  $('#Gender').append(data2.Gender);
+			  $('#status').append(data2.status);
+			  $('#dob').append(data2.dob);
+			  
+			  
+			  }
+		 });
+ 	
+ 	
+ 	
+ 	
+ }
+ function clearFunction() {
+
+	 
+		$('#scname1').val("");
+		 $("#email1").val("");
+		$("#dept1").val("-1"); 
+		 $("#role1").val("-1"); 
+		 $("#status1").val("");
+
+ }	
+ 
+	function myFunction() {
+		  var x = document.getElementById("myForm");
+		  if (x.style.display === "none") {
+		    x.style.display = "block";
+		  } else {
+		    x.style.display = "none";
+		  }
+		}
+	function closeForm() {
+		  document.getElementById("myForm").style.display = "none";
+		}
+	
+	function isEmptyArray(){
+	$.ajax({
+		  type:"GET",
+		  url:"<%=fetchusersURL%>",
+		  data:{ <portlet:namespace />search: "key"},
+		  success: function(data){
+			  var da = $.parseJSON(data);
+		     $("#userlist li").empty();
+		     //console.log("list of items::"+da.length)
+		     firstDisplay(da[0]);
+		     for(var i=0;i<da.length;i++){
+		    	 var obj=da[i];
+		    	 //console.log(obj);
+		    	  /*if(i==0)
+		    		  {
+		    		  
+		    		  firstDisplay(da[i]);
+		    		  
+		    		  
+		    		  }*/
+		    	 $('#userlist').append("<li id='"+obj.fullname+"' value='"+obj.fullname+"'>"+obj.fullname+"</li>");
+		    	 
+		         }
+		     
+		     }
+		  
+		     });
+	
+	}
+
+	function noResultFound(){
+	$('#result').show();
+	  $('#pscname').empty();
+	  $('#scname').empty();
+	  $('#name').empty();
+	  $('#mail').empty();
+	  $('#dept').empty();
+	  $('#role').empty();
+	  $('#rmanager').empty();
+	  $('#rhod').empty();
+	  $('#mobile').empty();
+	  $('#Gender').empty();
+	  $('#status').empty();
+	  $('#dob').empty();
+	}
+	
+ 
+ $(document).ready(function(){
+	
+	 myFunction();
+	 $('#error').hide();
+	 $('#result').hide();
+	 clearFunction();
+	 
+	 $.ajax({
+		  type:"GET",
+		  url:"<%=fetchusersURL%>",
+		  data:{ <portlet:namespace />search: "key"},
+		  success: function(data){
+			  var da = $.parseJSON(data);
+		     $("#userlist li").empty();
+		     //console.log("list of items::"+da.length)
+		     firstDisplay(da[0]);
+		     for(var i=0;i<da.length;i++){
+		    	 var obj=da[i];
+		    	 //console.log(obj);
+		    	  /*if(i==0)
+		    		  {
+		    		  
+		    		  firstDisplay(da[i]);
+		    		  
+		    		  
+		    		  }*/
+		    	 $('#userlist').append("<li id='"+obj.fullname+"' value='"+obj.fullname+"'>"+obj.fullname+"</li>");
+		    	 
+		         }
+		     
+		     }
+		  
+		     });
+  
+	 var i=0;
+	 var count=0;
+	 var start=1;
+	 var remaining=0;
+	 
+	 
+	 
+	 $("li").removeClass('selected');
+	 $.ajax({
+         type:"GET",
+         url:"<%=fetchusersURL%>",
+         data:{ <portlet:namespace />search: "count"},
+         success: function(data){
+         count = parseInt(data);
+            }
+
+           });
+	 
+
+	 
+	 $("#submitbtn").on("click", function(){
+	
+		 $('#error').hide();
+		 
+		 
+		 var scname =$('#scname1').val()  ;
+		 var email =$("#email1").val();
+		 var dept =$("#dept1").val(); 
+		 var role =$("#role1").val(); 
+		 var status =$("#status1").val();
+		 
+ 	
+		 if(scname=="" && email=="" && dept=="-1" && role=="-1" && status=="")
+			 {
+			 $('#error').show();
+			 
+			 }
+		 
+		 
+		/* 
+		console.log(scname);
+		console.log(email);
+		console.log(dept);
+		console.log(role);
+		console.log(status);*/
+		else{
+		$.ajax({
+			  type:"GET",
+			  url:"<%=fetchusersURL%>",
+			  data:{ <portlet:namespace />search: "bygroup",
+				  <portlet:namespace />scname: scname,
+				  <portlet:namespace />email: email,
+				  <portlet:namespace />dept1: dept,
+				  <portlet:namespace />role: role,
+				  <portlet:namespace />status: status
+				  
+			  
+			  },
+			  success: function(data){
+				  console.log(data);
+				  var da = $.parseJSON(data);
+				     $("#userlist li").empty();
+				     //console.log("list of items::"+da.length)
+				     console.log("length of array"+da.length);
+				     firstDisplay(da[0])
+				    
+				     for(var i=0;i<da.length;i++){
+				    	 var obj=da[i];
+				    	 
+				    	 $('#userlist').append("<li id='"+obj.fullname+"' value='"+obj.fullname+"'>"+obj.fullname+"</li>");
+				    	 
+				         }
+				     
+			     }
+			  
+			     });
+		
+		 
+		closeForm();
+		clearFunction();
+		}
+	 });
+	 
+	 
+	 
+	 $("#<portlet:namespace />searchbyname").on("click", function(){
+	 
+		 start=1;
+		  
+		  $.ajax({
+			  type:"GET",
+			  url:"<%=fetchusersURL%>",
+			  data:{ <portlet:namespace />search: "key"},
+			  success: function(data){
+				  var da = $.parseJSON(data);
+			     $("#userlist li").empty();
+			     //console.log("list of items::"+da.length)
+			     
+			     firstDisplay(da[0]);
+			     for(var i=0;i<da.length;i++){
+			    	 var obj=da[i];
+			    	 $('#userlist').append("<li id='"+obj.fullname+"' value='"+obj.fullname+"'>"+obj.fullname+"</li>");
+			    	 
+			         }
+			     
+			     }
+			  
+			     });
+		 
+	 $("#<portlet:namespace />searchbyname").keyup(function() {
+		
+		  
+		  var foo = $(this).val();
+		  console.log(foo);
+		 
+		  
+		  $("#userlist li").empty();
+		  
+		  $.ajax({
+			  type:"GET",
+			  url:"<%=fetchusersURL%>",
+			  data:{ <portlet:namespace />search: "byname",<portlet:namespace />searchbyname: foo},
+			  success: function(data){
+				  var da = $.parseJSON(data);
+			     $("#userlist li").empty();
+			     var da = $.parseJSON(data);
+			     $("#userlist li").empty();
+			     console.log("list of items::"+da.length)
+			     if(da.length==0){
+			     	console.log("executing........")
+			     	noResultFound(); 
+			     }
+			     else{
+			    	 firstDisplay(da[0]);
+			    	 $('#result').hide();
+			     for(var i=0;i<da.length;i++){
+			    	 var obj=da[i];
+			    	 //console.log(obj);
+			    	 /*if(i==0)
+			    		  {
+			    		  
+			    		  firstDisplay(da[i]);
+			    		  
+			    		  
+			    		  }*/
+			    	  
+			    	 $('#userlist').append("<li value='"+obj.fullname+"'>"+obj.fullname+"</li>");
+			    	 
+			     }
+			  }
+			     
+			     
+			     
+			   }
+			  
+			});
+		  
+		});
+	 
+	 
+		 
+		 
+		 console.log("hello");
+		 
+	 });	 
+	 
+ 
+	      
+	       $("#userlist").on("click","li", function(){
+			     //console.log("list");
+			     //console.log($(this).text());
+			     var str=$(this).text();
+			     
+			     
+			     
+			     $("li").removeClass('selected');
+			     $(this).addClass('selected');
+			     
+			     //console.log('clicked on'+str);
+			     $("#mytable").show();
+				 $('#pscname').show();
+			     $.ajax({
+					  type:"GET",
+					  url:"<%=fetchusersURL%>",
+					  data:{ <portlet:namespace />search: "individual",<portlet:namespace />searchid: str},
+					  success: function(data){  
+						  var data2 = JSON.parse(data);
+					  
+					   
+					   
+					      $('#pscname').empty();
+						  $('#scname').empty();
+						  $('#name').empty();
+						  $('#mail').empty();
+						  $('#dept').empty();
+						  $('#role').empty();
+						  $('#rmanager').empty();
+						  $('#rhod').empty();
+						  $('#mobile').empty();
+						  $('#Gender').empty();
+						  $('#status').empty();
+						  $('#dob').empty();
+					   
+					   
+						  $('#pscname').append(data2.scname);
+						  $('#scname').append(data2.scname);
+						  $('#name').append(data2.name);
+						  $('#mail').append(data2.email);
+						  $('#dept').append(data2.dept);
+						  $('#role').append(data2.role);
+						  $('#rmanager').append(data2.rmanager);
+						  $('#rhod').append(data2.rhod);
+						  $('#mobile').append(data2.mobile);
+						  $('#Gender').append(data2.Gender);
+						  $('#status').append(data2.status);
+						  $('#dob').append(data2.dob);
+						  
+						  }
+					 });
+			     
+			     
+			    });
+	 
+	 
+	            
+	           
+	       
+	       
+
+
+
+
+
+ });
+ </script> 
+
+ 
+ 
+<!-- <div width="50%" height="700px" align="left">
+ <aui:button id="btn12" name="btn1" value="Users" />
+<br> -->
+
+</div id="#content" >
+
+<table border="0">
+<tr>
+<td>
+<aui:input   id="searchbyname" label="" name="name" type="text" placeholder="search by name"/>
+</td>
+<td>
+<button class="open-button" onclick="myFunction();"><img src="/home/srikanth.yenagandula/Desktop/filter-512.png"  width="32" height="52"></button>
+</td>
+</tr>
+<tr>
+<td>
+<p id="result" style="color:red;">Result-Not-Found</p>
+</td>
+</tr>
+<tr>
+<td>
+<div id="scrolldiv" style="border:none;width:400px;height:550px;overflow:scroll;">
+<ul style="list-style-type:none;" name="username" id="userlist">
+  </ul> 
+</div>
+</td>
+
+<td>
+ <h2 id="pscname" style="color:#0f408e"></h2>
+<table align="center" id="mytable" border="0" rules="none" align="center" cellspacing="20" cellpadding="5">
+<tr><th >ScreenName</th><td  id="scname"></td></tr>
+<tr><th>Name</th><td id="name"></td></tr>
+<tr><th>Email</th><td id="mail"></td></tr>
+<tr><th>Department</th><td id="dept"></td></tr>	
+<tr><th>DesignaationRole</th><td id="role"></td></tr>
+<tr><th>ReportingManager</th><td id="rmanager"></td></tr>
+<tr><th>RespectiveHOD</th><td id="rhod"></td></tr>
+<tr><th>MobileNo</th><td id="mobile"></td></tr>
+<tr><th>DOB</th><td id="dob"></td></tr>
+<tr><th>Gender</th><td id="Gender"></td></tr>
+<tr><th>Status</th><td id="status"></td></tr>
+</table>
+</td>
+</tr>
+</table>
+<div class="form-popup" id="myForm">
+  <div  id="ajaxForm" class="form-container">
+ 
+   <table>
+   <tr><td>
+    ScreenName<br>
+    <input type="text" placeholder="screen name" value="" name="scname" id="scname1">
+	</td><td colspan="2">Email<br> 
+    <input type="text" placeholder="email" name="email" value="" id="email1">
+    <td>
+    </tr>
+    <tr>
+    <td>Department<br/>
+    <select name="dept" id="dept1">
+    <option value="-1"  selected>Select Option</option>
+    <option value="hr">HR</option>
+    <option value="developers">developers</option>
+	</select>
+	</td>
+	<td>
+	Desg/Role<br/>
+    <select name="role" id="role1">
+    <option value="-1" >Select Option</option>
+    <option >srDeveloper</option>
+    <option >JrDeveloper</option>
+    <option >HR</option>
+	</select>
+	</td><td>
+    Status <br>
+    <input type="text" placeholder="status" name="status" value="" id="status1"><br/>
+
+    </td>
+    </tr>
+    <tr>
+    <td>
+    <button type="submit" id="submitbtn" >search</button>
+	<button type="reset" id="clearbtn" onclick="clearFunction();">clear</button>
+    
+    </td>
+    </tr>
+    </table>
+	    <p id="error" style="color:red;text-align:center;">please select fields</p>
+ </div>
+</div>
+
+
+
